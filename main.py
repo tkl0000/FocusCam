@@ -9,6 +9,7 @@ import time
 import csv
 import datetime
 import os
+import vlc
 
 # Load facial landmarks model
 mp_face_mesh = mp.solutions.face_mesh
@@ -163,6 +164,11 @@ while True:
     frame_time = str(cur_time - start_time)
 
     print(vertical_ratio)
+
+    if (paying_attention == False):
+        if (cur_time % 5000 == 0): 
+            p = vlc.MediaPlayer('notif.mp3')
+            p.play()
 
     if (paying_attention):
         if (vertical_ratio != None and vertical_ratio < gaze_threshold):
