@@ -1,4 +1,5 @@
 import tkinter as tk
+
 import cv2
 import sys
 import numpy as np
@@ -105,24 +106,12 @@ def get_frame():
     global filename
     global face_cascade
 
+    cur_time = int(time.time() * 1000)
+
     ret, frame = cap.read()
     if not ret:
         print('Error in retrieving frame')
         exit()
-
-    faces = face_cascade.detectMultiScale(frame, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
-    faces = sorted(faces, key=lambda x: x[2] * x[3])
-    if (len(faces) < 1):
-        return frame
-    x, y, w, h = faces[-1]
-    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    roi_color = frame[y:y + h, x:x + w]
-    gaze.refresh(roi_color)
-
-    vertical_ratio = gaze.vertical_ratio()
-    horizontal_ratio = gaze.horizontal_ratio()
-    cur_time = int(time.time() * 1000)
-    frame_time = str(cur_time - start_time)
 
     if (paying_attention == False):
         if (cur_time - last_notif_time > 1000): 
@@ -132,6 +121,24 @@ def get_frame():
             notification.audio = "notif.wav"
             notification.send(block=False)
             last_notif_time = cur_time
+
+    faces = face_cascade.detectMultiScale(frame, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
+    faces = sorted(faces, key=lambda x: x[2] * x[3])
+    if (len(faces) < 1):
+        last_distracted_time = cur_time
+        if (paying_attention and cur_time - last_attention_time > lost_attention_threshold):
+            paying_attention = False
+            start_distracted = cur_time
+        return frame
+    
+    x, y, w, h = faces[-1]
+    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    roi_color = frame[y:y + h, x:x + w]
+    gaze.refresh(roi_color)
+
+    vertical_ratio = gaze.vertical_ratio()
+    horizontal_ratio = gaze.horizontal_ratio()
+    frame_time = str(cur_time - start_time)
 
     if (paying_attention):
         if (vertical_ratio != None and vertical_ratio < vertical_gaze_threshold and abs(0.5-horizontal_ratio) < horizontal_gaze_threshold):
