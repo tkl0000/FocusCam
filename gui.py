@@ -114,7 +114,7 @@ def get_frame():
     faces = sorted(faces, key=lambda x: x[2] * x[3])
     if (len(faces) < 1):
         return frame
-    x, y, w, h = faces[0]
+    x, y, w, h = faces[-1]
     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
     roi_color = frame[y:y + h, x:x + w]
     gaze.refresh(roi_color)
