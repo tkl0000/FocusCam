@@ -60,7 +60,7 @@ def setup_variables():
     paying_attention = True #boolean representing attention - true by default
 
     vertical_gaze_threshold = 0.8 #how low gaze can be before being marked as distracted
-    horizontal_gaze_threshold = 0.3 #how off to side gaze can be before being marked as distracted
+    horizontal_gaze_threshold = 0.2 #how off to side gaze can be before being marked as distracted
 
     user_id = 1 #User ID.
 
