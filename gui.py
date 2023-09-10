@@ -41,6 +41,7 @@ def setup_variables():
     global user_id
     global last_notif_time
     global filename
+    global recording
 
     start_time = int(time.time() * 1000) #Time variables
     cur_time = start_time
@@ -64,6 +65,8 @@ def setup_variables():
     user_id = 1 #User ID.
 
     last_notif_time = 0 #notification spacingo ut
+
+    recording = False
 
 def get_frame():
 
@@ -150,13 +153,26 @@ def update_frame():
     custom_font = ("Helvetica", 30)
     label.config(image=tkinter_frame, pady=20, text=status_text, font=custom_font, compound="top")
     
-    label.after(5, update_frame)  # 10ms delay between frame updates
+    global recording
+    if (recording):
+        label.after(5, update_frame)  # 10ms delay between frame updates
 
 def start_recording():
-    record_button.config(text="Recording...")
-    setup_csv()
-    update_frame()
-
+    global recording
+    if (recording == False):
+        recording = True
+        record_button.config(text="Recording...")
+        setup_csv()
+        update_frame()
+    else:
+        recording = False
+        global cap
+        global cv2
+        global label
+        cap.release()
+        cv2.destroyAllWindows()
+        exit()
+        
 def update_horizontal(value):
     global horizontal_gaze_threshold
     horizontal_gaze_threshold = float(value)/100.0
