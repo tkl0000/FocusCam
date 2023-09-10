@@ -56,6 +56,9 @@ def setup_variables():
     global last_notif_time
     global filename
     global recording
+    global face_cascade
+
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
     start_time = int(time.time() * 1000) #Time variables
     cur_time = start_time
@@ -100,13 +103,21 @@ def get_frame():
     global user_id
     global last_notif_time
     global filename
+    global face_cascade
 
     ret, frame = cap.read()
     if not ret:
         print('Error in retrieving frame')
         exit()
 
-    gaze.refresh(frame)
+    faces = face_cascade.detectMultiScale(frame, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
+    faces = sorted(faces, key=lambda x: x[2] * x[3])
+    if (len(faces) < 1):
+        return frame
+    x, y, w, h = faces[0]
+    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    roi_color = frame[y:y + h, x:x + w]
+    gaze.refresh(roi_color)
 
     vertical_ratio = gaze.vertical_ratio()
     horizontal_ratio = gaze.horizontal_ratio()
@@ -143,7 +154,8 @@ def get_frame():
     print(str(vertical_gaze_threshold) + " - " + str(horizontal_gaze_threshold))
     print(str(lost_attention_threshold) + " - " + str(paying_attention_threshold))
     print()
-    return gaze.annotated_frame()
+    return frame
+    # return gaze.annotated_frame()
 
 def setup_csv():
     global filename
