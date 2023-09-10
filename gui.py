@@ -89,7 +89,8 @@ def get_frame():
 
     ret, frame = cap.read()
     if not ret:
-        return 0
+        print('Error in retrieving frame')
+        exit()
 
     gaze.refresh(frame)
 
@@ -161,7 +162,7 @@ def start_recording():
     global recording
     if (recording == False):
         recording = True
-        record_button.config(text="Recording...")
+        record_button.config(text="Stop Recording")
         setup_csv()
         update_frame()
     else:
