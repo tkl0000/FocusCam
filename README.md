@@ -76,7 +76,7 @@ The following Python packages are required for FocusCam:
 
 1. Clone the repository:
     ```bash
-    git clone [repo-link]
+    git clone [https://github.com/tkl0000/FocusCam.git]
     ```
 
 2. Navigate to the cloned repository:
@@ -116,7 +116,7 @@ This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md)
 
 ## Contact
 
-For questions, suggestions, or feedback, please reach out to us at [contact-email].
+For questions, suggestions, or feedback, please reach out to us at [thomasli2025@gmail.com].
 
 ---
 
