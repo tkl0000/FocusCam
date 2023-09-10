@@ -9,26 +9,7 @@ import time
 import csv
 import datetime
 import os
-import vlc
-
-# Load facial landmarks model
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh()
-
-face_landmark_points = [1, 152, 33, 263, 57, 287]
-
-# 3D model points from a canonical facial model
-model_points = np.array([
-    (0.0, 0.0, 0.0),  # Nose tip
-    (0.0, -330.0, -65.0),  # Chin
-    (-225.0, 170.0, -135.0),  # Left eye left corner
-    (225.0, 170.0, -135.0),  # Right eye right corner
-    (-150.0, -150.0, -125.0),  # Left Mouth corner
-    (150.0, -150.0, -125.0)  # Right mouth corner
-])
-
-# 2D facial landmarks we'll use from MediaPipe model
-face_landmark_points = [1, 152, 33, 263, 57, 287]
+from notifypy import Notify
 
 def get_head_pose(image, landmarks):
     image_pts = np.array([
@@ -95,6 +76,24 @@ def get_eye_gaze(eye_points, gray):
     else:
         return None
 
+# Load facial landmarks model
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh()
+
+face_landmark_points = [1, 152, 33, 263, 57, 287]
+
+# 3D model points from a canonical facial model
+model_points = np.array([
+    (0.0, 0.0, 0.0),  # Nose tip
+    (0.0, -330.0, -65.0),  # Chin
+    (-225.0, 170.0, -135.0),  # Left eye left corner
+    (225.0, 170.0, -135.0),  # Right eye right corner
+    (-150.0, -150.0, -125.0),  # Left Mouth corner
+    (150.0, -150.0, -125.0)  # Right mouth corner
+])
+
+# 2D facial landmarks we'll use from MediaPipe model
+face_landmark_points = [1, 152, 33, 263, 57, 287]
 
 #Time variables
 start_time = int(time.time() * 1000)
@@ -109,7 +108,7 @@ end_distracted = ''
 gaze = GazeTracking() #Init Gaze Tracking
 cap = cv2.VideoCapture(0) # Capture video
 
-lost_attention_threshold = 5000 #time distracted before being marked as not paying attention (ms)
+lost_attention_threshold = 3000 #time distracted before being marked as not paying attention (ms)
 paying_attention_threshold = 500 #time of paying attention before being marked as paying attention (ms)
 paying_attention = True #boolean representing attention - true by default
 
@@ -128,32 +127,35 @@ with open(filename, 'w', newline='') as csv_file:
 #User ID.
 user_id = 1
 
+#notification spacingo ut
+last_notif_time = 0
+
 while True:
     ret, frame = cap.read()
     if not ret:
         break
 
-    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    # results = face_mesh.process(frame_rgb)
-    # if results.multi_face_landmarks:
-    #     for facial_landmarks in results.multi_face_landmarks:
-    #         landmarks = {i: (
-    #         int(facial_landmarks.landmark[i].x * frame.shape[1]), int(facial_landmarks.landmark[i].y * frame.shape[0]))
-    #                      for i in range(468)}
+    results = face_mesh.process(frame_rgb)
+    if results.multi_face_landmarks:
+        for facial_landmarks in results.multi_face_landmarks:
+            landmarks = {i: (
+            int(facial_landmarks.landmark[i].x * frame.shape[1]), int(facial_landmarks.landmark[i].y * frame.shape[0]))
+                        for i in range(468)}
 
-    #         left_eye = [landmarks[i] for i in range(133, 143)]
-    #         right_eye = [landmarks[i] for i in range(362, 372)]
+            left_eye = [landmarks[i] for i in range(133, 143)]
+            right_eye = [landmarks[i] for i in range(362, 372)]
 
-    #         left_pupil = get_eye_gaze(left_eye,gray)
-    #         right_pupil = get_eye_gaze(right_eye,gray)
+            left_pupil = get_eye_gaze(left_eye,gray)
+            right_pupil = get_eye_gaze(right_eye,gray)
 
-    #         cv2.circle(frame, left_pupil, 3, (0, 0, 255), -1)
-    #         cv2.circle(frame, right_pupil, 3, (0, 0, 255), -1)
+            cv2.circle(frame, left_pupil, 3, (0, 0, 255), -1)
+            cv2.circle(frame, right_pupil, 3, (0, 0, 255), -1)
 
-    #         p1, p2 = get_head_pose(frame, landmarks)
-    #         cv2.line(frame, p1, p2, (255, 0, 0), 2)
+            p1, p2 = get_head_pose(frame, landmarks)
+            cv2.line(frame, p1, p2, (255, 0, 0), 2)
 
     gaze.refresh(frame)
 
@@ -163,12 +165,14 @@ while True:
     cur_time = int(time.time() * 1000)
     frame_time = str(cur_time - start_time)
 
-    print(vertical_ratio)
-
     if (paying_attention == False):
-        if (cur_time % 5000 == 0): 
-            p = vlc.MediaPlayer('notif.mp3')
-            p.play()
+        if (cur_time - last_notif_time > 1000): 
+            notification = Notify()
+            notification.title = "Notice"
+            notification.message = "Pay Attention!"
+            notification.audio = "notif.wav"
+            notification.send(block=False)
+            last_notif_time = cur_time
 
     if (paying_attention):
         if (vertical_ratio != None and vertical_ratio < gaze_threshold):
@@ -187,13 +191,20 @@ while True:
                 writer = csv.writer(csv_file)
                 writer.writerow(row)
 
-    cv2.putText(frame, str(vertical_ratio), (60, 120), cv2.FONT_HERSHEY_DUPLEX, 2, (255, 0, 0), 2)
-    cv2.putText(frame, str(paying_attention), (60, 600), cv2.FONT_HERSHEY_DUPLEX, 2, (255, 0, 0), 2)
+    label = ''
+    if (paying_attention):
+        label = 'Focused'
+    else:
+        label = 'Distracted'
+    cv2.putText(frame, label, (60, 600), cv2.FONT_HERSHEY_DUPLEX, 2, (255, 255, 255), 2)
+
+    print(vertical_ratio)
 
     # print(f'Last Attention Time: {last_attention_time}')
     # print(f'Cur Time: ')
 
-    cv2.imshow("Attention Tracking", frame)
+    cv2.imshow("Attention Tracking", gaze.annotated_frame())
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         if (paying_attention == False):
             end_distracted = cur_time
@@ -207,5 +218,3 @@ cap.release()
 cv2.destroyAllWindows()
 
 #Process timestamps
-df = pd.read_csv(filename)
-
