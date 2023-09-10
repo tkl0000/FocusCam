@@ -11,13 +11,27 @@ import csv
 import datetime
 import os
 from notifypy import Notify
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
+
+def add_corners(im, rad):
+    circle = Image.new('L', (rad * 2, rad * 2), 0)
+    draw = ImageDraw.Draw(circle)
+    draw.ellipse((0, 0, rad * 2 - 1, rad * 2 - 1), fill=255)
+    alpha = Image.new('L', im.size, 255)
+    w, h = im.size
+    alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+    alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+    alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+    alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+    im.putalpha(alpha)
+    return im
 
 def open_cv_to_tkinter(image):
     # Convert BGR image to RGB
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Convert to PIL Image
     image = Image.fromarray(image)
+    image = add_corners(image, 30)
     # Convert to PhotoImage
     image = image.resize((640, 360))
     image = ImageTk.PhotoImage(image)
@@ -127,6 +141,7 @@ def get_frame():
 
     print(str(vertical_ratio) + ", " + str(horizontal_ratio))
     print(str(vertical_gaze_threshold) + " - " + str(horizontal_gaze_threshold))
+    print(str(lost_attention_threshold) + " - " + str(paying_attention_threshold))
     print()
     return gaze.annotated_frame()
 
@@ -182,6 +197,14 @@ def update_vertical(value):
     global vertical_gaze_threshold
     vertical_gaze_threshold = float(value)/100.0
 
+def update_lost_attention_threshold(value):
+    global lost_attention_threshold
+    lost_attention_threshold = int(value)
+
+def update_paying_attention_threshold(value):
+    global paying_attention_threshold
+    paying_attention_threshold = int(value)
+
 # Create the main window
 root = tk.Tk()
 root.title("FocusCam")
@@ -202,17 +225,38 @@ global label
 label = tk.Label(root)
 label.pack()
 
-padding1 = tk.Label(root, pady=10)
+frame1 = tk.Frame(root)
+frame2 = tk.Frame(root)
+frame3 = tk.Frame(root)
+frame4 = tk.Frame(root)
 
 global horizontal_slider
 global vertical_slider
-horizontal_slider = tk.Scale(root, from_=0, to=100, orient="horizontal", length=300, command=update_horizontal, label="Horizontal Threshold")
-vertical_slider = tk.Scale(root, from_=0, to=100, orient="horizontal", length=300, command=update_vertical, label="Vertical Threshold")
+global lost_attention_slider
+global pay_attention_slider
+
+horizontal_slider = tk.Scale(frame1, from_=0, to=100, orient="horizontal", length=300, command=update_horizontal, label="Horizontal Threshold")
+vertical_slider = tk.Scale(frame2, from_=0, to=100, orient="horizontal", length=300, command=update_vertical, label="Vertical Threshold")
+lost_attention_slider = tk.Scale(frame3, from_=0, to=10000, orient="horizontal", length=300, command=update_lost_attention_threshold, label="Lost Attention Threshold (ms)")
+pay_attention_slider = tk.Scale(frame4, from_=0, to=10000, orient="horizontal", length=300, command=update_paying_attention_threshold, label="Pay Attention Threshold (ms)")
+
 horizontal_slider.set(horizontal_gaze_threshold * 100)
 vertical_slider.set(vertical_gaze_threshold * 100)
-horizontal_slider.pack()
-padding1.pack()
-vertical_slider.pack()
+lost_attention_slider.set(lost_attention_threshold)
+pay_attention_slider.set(paying_attention_threshold)
+
+horizontal_slider.pack(side="top", padx=10, pady=10)
+# padding1.pack()
+vertical_slider.pack(side="bottom", padx=10, pady=10)
+# padding2.pack()
+lost_attention_slider.pack(side="top", padx=10, pady=10)
+# padding3.pack()
+pay_attention_slider.pack(side="bottom", padx=10, pady=10)
+
+frame1.pack(side="left", padx=30)
+frame2.pack(side="left", padx=30)
+frame3.pack(side="right", padx=30)
+frame4.pack(side="right", padx=30)
 
 # Run the GUI
 root.mainloop()
