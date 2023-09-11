@@ -5,12 +5,12 @@ import sys
 import numpy as np
 import mediapipe as mp
 import pandas as pd
-sys.path.insert(0, '/Users/thomasli/Desktop/development/hackProject/GazeTracking/')
+import os
+sys.path.insert(0, os.getcwd() + '/GazeTracking/')
 from gaze_tracking import GazeTracking
 import time
 import csv
 import datetime
-import os
 from notifypy import Notify
 from PIL import Image, ImageTk, ImageDraw
 
