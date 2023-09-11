@@ -1,0 +1,6 @@
+mediapipe
+opencv-python
+tk
+notify-py
+numpy
+Pillow
